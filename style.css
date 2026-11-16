@@ -6,7 +6,6 @@
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-/* Tema Escuro Minimalista (Padrão) */
 :root {
     --bg-page: #09090b;
     --bg-card: #121216;
@@ -30,7 +29,6 @@
     --amber-bg: rgba(245, 158, 11, 0.12);
 }
 
-/* Tema Claro Opcional */
 body.light-mode {
     --bg-page: #f4f4f7;
     --bg-card: #ffffff;
@@ -93,8 +91,9 @@ body {
 }
 
 .subtitulo {
-    font-size: 0.82rem;
-    color: var(--text-muted);
+    font-size: 0.8rem;
+    color: var(--green-text);
+    font-weight: 600;
 }
 
 .acoes-topo {
@@ -119,11 +118,6 @@ body {
     background-color: var(--accent-hover);
 }
 
-.btn-primario:disabled {
-    opacity: 0.6;
-    cursor: wait;
-}
-
 .btn-secundario {
     background-color: transparent;
     color: var(--text-secondary);
@@ -138,6 +132,11 @@ body {
 .btn-secundario:hover {
     background-color: var(--bg-hover);
     color: var(--text-primary);
+}
+
+.btn-secundario:disabled {
+    opacity: 0.5;
+    cursor: wait;
 }
 
 /* --- CONTAINER --- */
@@ -294,7 +293,6 @@ body {
     flex-direction: column;
     justify-content: space-between;
     gap: 12px;
-    transition: border-color 0.15s;
 }
 
 .codigo-card:hover {
@@ -466,7 +464,7 @@ body {
     white-space: pre-line;
 }
 
-/* --- FONTES E WIKIS --- */
+/* --- FONTES --- */
 .grid-links {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -512,7 +510,6 @@ body {
     font-size: 0.82rem;
     font-weight: 600;
     text-decoration: none;
-    transition: border-color 0.15s;
 }
 
 .btn-link:hover {
@@ -605,13 +602,6 @@ body {
 
 .campo input:focus, .campo select:focus, .campo textarea:focus {
     border-color: var(--accent);
-}
-
-.dica-modal {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    margin-bottom: 14px;
-    line-height: 1.4;
 }
 
 .btn-full {

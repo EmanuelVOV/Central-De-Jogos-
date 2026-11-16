@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central Roblox • Wikis & Códigos</title>
+    <title>Central Roblox • Memória Local</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Cabeçalho -->
     <header class="topbar">
         <div class="topbar-container">
             <div class="titulo-area">
                 <h1>Central Roblox</h1>
-                <span id="status-sync" class="subtitulo">Pronto</span>
+                <span id="status-memoria" class="subtitulo">● Carregando...</span>
             </div>
 
             <div class="acoes-topo">
-                <button type="button" id="btn-sincronizar" class="btn-primario">↻ Sincronizar Wikis</button>
-                <button type="button" id="btn-abrir-modal" class="btn-secundario">+ Adicionar</button>
+                <button type="button" id="btn-ler-novamente" class="btn-secundario" title="Forçar nova leitura das Wikis">↻ Atualizar Wikis</button>
+                <button type="button" id="btn-abrir-modal" class="btn-primario">+ Adicionar</button>
                 <button type="button" id="btn-tema" class="btn-secundario" title="Alternar tema">Tema</button>
             </div>
         </div>
@@ -27,7 +26,7 @@
     <main class="container">
         
         <!-- Filtro por Jogo -->
-        <section class="filtros-jogos" id="filtros-jogos">
+        <section class="filtros-jogos">
             <button type="button" class="jogo-pill ativo" data-jogo="todos">Todos os Jogos</button>
             <button type="button" class="jogo-pill" data-jogo="Jujutsu Shenanigans">Jujutsu Shenanigans</button>
             <button type="button" class="jogo-pill" data-jogo="Stand Out">Stand Out</button>
@@ -40,19 +39,19 @@
             <nav class="abas">
                 <button type="button" class="aba-btn ativa" data-aba="secao-codigos">Códigos</button>
                 <button type="button" class="aba-btn" data-aba="secao-updates">Atualizações</button>
-                <button type="button" class="aba-btn" data-aba="secao-fontes">Wikis & Fontes</button>
+                <button type="button" class="aba-btn" data-aba="secao-fontes">Wikis & Links</button>
             </nav>
 
-            <input type="text" id="input-busca" placeholder="Filtrar código, item ou update...">
+            <input type="text" id="input-busca" placeholder="Buscar código ou novidade...">
         </div>
 
         <!-- ABA 1: COFRE DE CÓDIGOS -->
         <section id="secao-codigos" class="aba-conteudo ativa">
             <div class="cabecalho-secao">
-                <h2 id="contador-codigos">Códigos Disponíveis</h2>
+                <h2 id="contador-codigos">Códigos na Memória</h2>
                 <div class="filtro-status">
                     <button type="button" class="status-pill ativo" data-status="todos">Todos</button>
-                    <button type="button" class="status-pill" data-status="ativo">Não Resgatados</button>
+                    <button type="button" class="status-pill" data-status="ativo">Ativos</button>
                     <button type="button" class="status-pill" data-status="resgatado">Resgatados</button>
                 </div>
             </div>
@@ -63,16 +62,16 @@
         <!-- ABA 2: ATUALIZAÇÕES -->
         <section id="secao-updates" class="aba-conteudo">
             <div class="cabecalho-secao">
-                <h2>Notas de Atualização (Wikis)</h2>
+                <h2>Atualizações Salvas</h2>
             </div>
 
             <div id="lista-updates" class="lista-updates"></div>
         </section>
 
-        <!-- ABA 3: WIKIS E SITES DE CÓDIGOS -->
+        <!-- ABA 3: LINKS DIRETOS -->
         <section id="secao-fontes" class="aba-conteudo">
             <div class="cabecalho-secao">
-                <h2>Fontes Conectadas (Wikis & Sites de Códigos)</h2>
+                <h2>Páginas Oficiais e Wikis</h2>
             </div>
 
             <div id="grid-fontes" class="grid-links"></div>
@@ -80,18 +79,18 @@
 
     </main>
 
-    <!-- Modal (inicia oculto via inline style para nunca bloquear cliques) -->
+    <!-- Modal para Adicionar Código, Update ou Colar Lista -->
     <div id="modal-novo" class="modal-fundo" style="display: none;">
         <div class="modal-box">
             <div class="modal-topo">
-                <h3>Adicionar ou Importar</h3>
+                <h3>Salvar na Memória</h3>
                 <button type="button" id="btn-fechar-modal" class="btn-fechar">✕</button>
             </div>
 
             <div class="tipo-registro">
-                <button type="button" class="tipo-btn ativo" data-tipo="codigo">Código</button>
+                <button type="button" class="tipo-btn ativo" data-tipo="codigo">1 Código</button>
+                <button type="button" class="tipo-btn" data-tipo="lote">Colar Lista</button>
                 <button type="button" class="tipo-btn" data-tipo="update">Atualização</button>
-                <button type="button" class="tipo-btn" data-tipo="url">Importar Site</button>
             </div>
 
             <form id="form-adicionar">
@@ -105,7 +104,7 @@
                     </select>
                 </div>
 
-                <!-- Campos de Código Manual -->
+                <!-- Opção 1: Código Único -->
                 <div id="campos-codigo">
                     <div class="campo">
                         <label>Código</label>
@@ -117,33 +116,31 @@
                     </div>
                 </div>
 
-                <!-- Campos de Atualização Manual -->
+                <!-- Opção 2: Colar Lista de qualquer site -->
+                <div id="campos-lote" style="display: none;">
+                    <div class="campo">
+                        <label>Cole os códigos copiados de qualquer site (um por linha)</label>
+                        <textarea id="input-lote" rows="5" placeholder="Exemplo:&#10;KITT_RESET - Reset de Status&#10;SUB2OFFICIALNOOBIE - 20 min 2x EXP"></textarea>
+                    </div>
+                </div>
+
+                <!-- Opção 3: Atualização -->
                 <div id="campos-update" style="display: none;">
                     <div class="campo">
-                        <label>Título / Versão</label>
-                        <input type="text" id="input-titulo-update" placeholder="Ex: Update 24 • Novo Mapa">
+                        <label>Título da Atualização</label>
+                        <input type="text" id="input-titulo-update" placeholder="Ex: Update 24 • Novo Personagem">
                     </div>
                     <div class="campo">
-                        <label>Detalhes da Atualização</label>
-                        <textarea id="input-desc-update" rows="3" placeholder="Descreva o que mudou..."></textarea>
+                        <label>Resumo do que mudou</label>
+                        <textarea id="input-desc-update" rows="3" placeholder="Anote os novos itens, nerfs ou eventos..."></textarea>
                     </div>
                 </div>
 
-                <!-- Campos para Puxar de Site de Códigos / Wiki Externa -->
-                <div id="campos-url" style="display: none;">
-                    <div class="campo">
-                        <label>Link da Página de Códigos (Pro Game Guides, Wiki, etc.)</label>
-                        <input type="url" id="input-url-externa" placeholder="https://progameguides.com/roblox/...">
-                    </div>
-                    <p class="dica-modal">O sistema vai ler as tabelas e listas da página e importar os códigos novos automaticamente.</p>
-                </div>
-
-                <button type="submit" id="btn-salvar-modal" class="btn-primario btn-full">Salvar</button>
+                <button type="submit" class="btn-primario btn-full">Guardar na Memória</button>
             </form>
         </div>
     </div>
 
-    <!-- Notificação Flutuante -->
     <div id="toast" class="toast" style="display: none;"></div>
 
     <script src="script.js"></script>
