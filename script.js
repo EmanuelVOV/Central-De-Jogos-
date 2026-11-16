@@ -1,6 +1,6 @@
-const STORAGE_CODIGOS = "roblox_mem_codigos_v1";
-const STORAGE_UPDATES = "roblox_mem_updates_v1";
-const STORAGE_JA_LEU = "roblox_mem_ja_leu_v1";
+const STORAGE_CODIGOS = "roblox_mem_codigos_v2";
+const STORAGE_UPDATES = "roblox_mem_updates_v2";
+const STORAGE_JA_LEU = "roblox_mem_ja_leu_v2";
 
 let jogoSelecionado = "todos";
 let statusSelecionado = "todos";
@@ -11,7 +11,7 @@ const FONTES_JOGOS = [
         jogo: "Blox Fruits",
         wikiDominio: "blox-fruits.fandom.com",
         paginaCodigos: "Codes",
-        paginaUpdates: "Updates",
+        paginasUpdates: ["Updates", "Update_Log", "Changelog"],
         links: [
             { nome: "Wiki Oficial • Códigos", url: "https://blox-fruits.fandom.com/wiki/Codes" },
             { nome: "Wiki Oficial • Updates", url: "https://blox-fruits.fandom.com/wiki/Updates" },
@@ -22,7 +22,7 @@ const FONTES_JOGOS = [
         jogo: "Jujutsu Shenanigans",
         wikiDominio: "jujutsu-shenanigans.fandom.com",
         paginaCodigos: "Codes",
-        paginaUpdates: "Updates",
+        paginasUpdates: ["Updates", "Update_Log", "Changelog"],
         links: [
             { nome: "Wiki Oficial • Códigos", url: "https://jujutsu-shenanigans.fandom.com/wiki/Codes" },
             { nome: "Wiki Oficial • Updates", url: "https://jujutsu-shenanigans.fandom.com/wiki/Updates" },
@@ -33,7 +33,7 @@ const FONTES_JOGOS = [
         jogo: "Stand Out",
         wikiDominio: "stand-out.fandom.com",
         paginaCodigos: "Codes",
-        paginaUpdates: "Updates",
+        paginasUpdates: ["Updates", "Update_Log", "Changelog"],
         links: [
             { nome: "Wiki Oficial • Códigos", url: "https://stand-out.fandom.com/wiki/Codes" },
             { nome: "Wiki Oficial • Página Principal", url: "https://stand-out.fandom.com/wiki/Stand_Out_Wiki" }
@@ -43,7 +43,7 @@ const FONTES_JOGOS = [
         jogo: "A Bizarre Run",
         wikiDominio: "a-bizarre-run.fandom.com",
         paginaCodigos: "Codes",
-        paginaUpdates: "Updates",
+        paginasUpdates: ["Updates", "Update_Log", "Changelog"],
         links: [
             { nome: "Wiki Oficial • Códigos", url: "https://a-bizarre-run.fandom.com/wiki/Codes" },
             { nome: "Wiki Oficial • Página Principal", url: "https://a-bizarre-run.fandom.com/wiki/A_Bizarre_Run_Wiki" }
@@ -51,7 +51,6 @@ const FONTES_JOGOS = [
     }
 ];
 
-// Base inicial já salva na memória caso alguma Wiki esteja offline
 const baseInicialCodigos = [
     { id: "init-1", jogo: "Blox Fruits", codigo: "SUB2GAMERROBOT_EXP1", recompensa: "20 minutos de 2x EXP", status: "ativo", fonte: "Memória Base" },
     { id: "init-2", jogo: "Blox Fruits", codigo: "KITT_RESET", recompensa: "Reembolso de Status (Stat Reset)", status: "ativo", fonte: "Memória Base" },
@@ -61,18 +60,30 @@ const baseInicialCodigos = [
 
 const baseInicialUpdates = [
     {
-        id: "upd-1",
+        id: "upd-base-1",
         jogo: "Blox Fruits",
-        titulo: "Rotação da Loja & Eventos Marítimos",
+        titulo: "Sistemas Ativos & Rotação de Conteúdo",
         data: "Memória Base",
-        descricao: "Estoque de frutas atualiza a cada 4 horas. Eventos de Sea Beasts e ilhas especiais rendem Beli e Fragmentos."
+        html: `
+            <h4>Mecânicas Principais</h4>
+            <ul>
+                <li><strong>Blox Fruit Dealer:</strong> O estoque de frutas físicas e da loja gira automaticamente a cada 4 horas.</li>
+                <li><strong>Eventos Marítimos:</strong> Sea Beasts, Navios Fantasmas e Terrosharks concedem Beli, Fragmentos e materiais de encantamento.</li>
+            </ul>
+        `
     },
     {
-        id: "upd-2",
+        id: "upd-base-2",
         jogo: "Jujutsu Shenanigans",
-        titulo: "Ajustes de Movesets & Destruição",
+        titulo: "Notas de Combate & Movesets",
         data: "Memória Base",
-        descricao: "Balanceamento de dano, correções de hitbox nos modos ranqueados e melhorias na física do cenário."
+        html: `
+            <h4>Destaques da Jogabilidade</h4>
+            <ul>
+                <li><strong>Destruição Dinâmica:</strong> Colisões de habilidades interagem diretamente com paredes e pisos da arena.</li>
+                <li><strong>Modo Ranqueado:</strong> Ajustes frequentes de hitbox, tempo de recarga (cooldown) e Awakening dos personagens.</li>
+            </ul>
+        `
     }
 ];
 
@@ -85,7 +96,9 @@ function lerStorage(chave, padrao) {
     }
 }
 
-let codigos = lerStorage(STORAGE_CODIGOS, baseInicialCodigos);
+// Migra códigos já salvos da v1 para manter seu progresso de códigos resgatados
+const codigosAntigos = lerStorage("roblox_mem_codigos_v1", null);
+let codigos = lerStorage(STORAGE_CODIGOS, codigosAntigos || baseInicialCodigos);
 let updates = lerStorage(STORAGE_UPDATES, baseInicialUpdates);
 
 function salvarNaMemoria() {
@@ -120,7 +133,96 @@ function copiarTexto(texto) {
     mostrarToast(`Copiado: ${texto}`);
 }
 
-async function fetchRapido(url, ms = 4000) {
+function escaparHTML(str) {
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+// Converte uma lista <ul> ou <ol> da Wiki mantendo sub-listas e negritos
+function converterListaWikiParaHTML(listaEl) {
+    const itens = Array.from(listaEl.children).filter(el => el.tagName === "LI");
+    if (itens.length === 0) return "";
+
+    let html = "<ul>";
+    itens.forEach(li => {
+        const clone = li.cloneNode(true);
+        const subListas = Array.from(clone.querySelectorAll(":scope > ul, :scope > ol"));
+        subListas.forEach(sub => sub.remove());
+
+        // Remove referências [1], [2]
+        clone.querySelectorAll("sup.reference").forEach(sup => sup.remove());
+
+        let textoItem = clone.innerText.replace(/\[.*?\]/g, "").trim();
+        // Destaca o prefixo antes de ":" se houver (ex: "New Fruit: Gas")
+        if (textoItem.includes(":")) {
+            const idx = textoItem.indexOf(":");
+            const chave = textoItem.slice(0, idx).trim();
+            const resto = textoItem.slice(idx + 1).trim();
+            if (chave.length > 0 && chave.length <= 45) {
+                textoItem = `<strong>${escaparHTML(chave)}:</strong> ${escaparHTML(resto)}`;
+            } else {
+                textoItem = escaparHTML(textoItem);
+            }
+        } else {
+            textoItem = escaparHTML(textoItem);
+        }
+
+        let subHTML = "";
+        subListas.forEach(sub => {
+            subHTML += converterListaWikiParaHTML(sub);
+        });
+
+        if (textoItem || subHTML) {
+            html += `<li>${textoItem}${subHTML}</li>`;
+        }
+    });
+    html += "</ul>";
+    return html;
+}
+
+// Converte o bloco completo de um update da Wiki em HTML estruturado
+function extrairBlocoUpdateCompleto(elementosIrmaos) {
+    let htmlFinal = "";
+
+    elementosIrmaos.forEach(el => {
+        const tag = el.tagName;
+
+        if (tag === "H3" || tag === "H4") {
+            const subtitulo = el.innerText.replace(/\[.*?\]/g, "").trim();
+            if (subtitulo) {
+                htmlFinal += `<h4>${escaparHTML(subtitulo)}</h4>`;
+            }
+        } else if (tag === "P") {
+            const paragrafo = el.innerText.replace(/\[.*?\]/g, "").trim();
+            if (paragrafo) {
+                htmlFinal += `<p>${escaparHTML(paragrafo)}</p>`;
+            }
+        } else if (tag === "UL" || tag === "OL") {
+            htmlFinal += converterListaWikiParaHTML(el);
+        } else if (tag === "TABLE") {
+            const linhas = Array.from(el.querySelectorAll("tr"));
+            if (linhas.length > 0) {
+                htmlFinal += "<ul>";
+                linhas.forEach(tr => {
+                    const cols = Array.from(tr.querySelectorAll("td, th")).map(c => c.innerText.replace(/\[.*?\]/g, "").trim()).filter(Boolean);
+                    if (cols.length >= 2) {
+                        htmlFinal += `<li><strong>${escaparHTML(cols[0])}:</strong> ${escaparHTML(cols.slice(1).join(" • "))}</li>`;
+                    } else if (cols.length === 1) {
+                        htmlFinal += `<li>${escaparHTML(cols[0])}</li>`;
+                    }
+                });
+                htmlFinal += "</ul>";
+            }
+        }
+    });
+
+    return htmlFinal;
+}
+
+async function fetchRapido(url, ms = 5000) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), ms);
     try {
@@ -130,13 +232,12 @@ async function fetchRapido(url, ms = 4000) {
     }
 }
 
-// --- LEITURA ÚNICA DAS WIKIS ---
+// --- LEITURA ÚNICA DAS WIKIS (CÓDIGOS + PATCH NOTES COMPLETOS) ---
 async function lerWikisUmaVez(forcar = false) {
     const statusEl = document.getElementById('status-memoria');
     const btnLer = document.getElementById('btn-ler-novamente');
     const jaLeu = localStorage.getItem(STORAGE_JA_LEU);
 
-    // Se já leu antes e não foi clicado para atualizar, usa 100% da memória local
     if (jaLeu && !forcar) {
         if (statusEl) statusEl.innerText = `● Carregado da memória (${jaLeu})`;
         renderizarTudo();
@@ -147,7 +248,7 @@ async function lerWikisUmaVez(forcar = false) {
         btnLer.disabled = true;
         btnLer.innerText = "Lendo Wikis...";
     }
-    if (statusEl) statusEl.innerText = "⏳ Lendo Wikis para salvar na memória...";
+    if (statusEl) statusEl.innerText = "⏳ Extraindo códigos e patch notes das Wikis...";
 
     let novosAdicionados = 0;
     const updatesExtraidos = [];
@@ -156,7 +257,7 @@ async function lerWikisUmaVez(forcar = false) {
         // 1. Buscar Códigos na Wiki
         try {
             const urlCod = `https://${fonte.wikiDominio}/api.php?action=parse&page=${encodeURIComponent(fonte.paginaCodigos)}&prop=text&format=json&origin=*`;
-            const res = await fetchRapido(urlCod, 4000);
+            const res = await fetchRapido(urlCod, 5000);
             if (res.ok) {
                 const json = await res.json();
                 const html = json?.parse?.text?.["*"];
@@ -188,56 +289,94 @@ async function lerWikisUmaVez(forcar = false) {
                     });
                 }
             }
-        } catch (e) {
-            // Ignora falha individual se a Wiki não responder a tempo
-        }
+        } catch (e) {}
 
-        // 2. Buscar Updates na Wiki
-        try {
-            const urlUpd = `https://${fonte.wikiDominio}/api.php?action=parse&page=${encodeURIComponent(fonte.paginaUpdates)}&prop=text&format=json&origin=*`;
-            const resUpd = await fetchRapido(urlUpd, 4000);
-            if (resUpd.ok) {
+        // 2. Buscar Updates Completos na Wiki (testa Updates, Update_Log, Changelog)
+        for (const nomePagina of fonte.paginasUpdates) {
+            try {
+                const urlUpd = `https://${fonte.wikiDominio}/api.php?action=parse&page=${encodeURIComponent(nomePagina)}&prop=text&format=json&origin=*`;
+                const resUpd = await fetchRapido(urlUpd, 5000);
+                if (!resUpd.ok) continue;
+
                 const jsonUpd = await resUpd.json();
                 const htmlUpd = jsonUpd?.parse?.text?.["*"];
-                if (htmlUpd) {
-                    const doc = new DOMParser().parseFromString(htmlUpd, "text/html");
-                    doc.querySelectorAll(".mw-parser-output h2, .mw-parser-output h3").forEach((h, i) => {
-                        if (i >= 4) return;
-                        const titulo = h.innerText.replace(/\[.*?\]/g, "").trim();
-                        if (!titulo || titulo.toLowerCase().includes("contents")) return;
+                if (!htmlUpd) continue;
 
-                        let desc = "";
-                        let prox = h.nextElementSibling;
-                        while (prox && !["H2", "H3"].includes(prox.tagName) && desc.length < 280) {
-                            if (prox.tagName === "UL" || prox.tagName === "P") {
-                                desc += prox.innerText.replace(/\[.*?\]/g, "").trim() + "\n";
+                const doc = new DOMParser().parseFromString(htmlUpd, "text/html");
+                const root = doc.querySelector(".mw-parser-output");
+                if (!root) continue;
+
+                const cabecalhosH2 = Array.from(root.querySelectorAll(":scope > h2"));
+                let encontradosNestaPagina = 0;
+
+                cabecalhosH2.forEach(h2 => {
+                    if (encontradosNestaPagina >= 6) return;
+
+                    const titulo = h2.innerText.replace(/\[.*?\]/g, "").trim();
+                    const tituloLower = titulo.toLowerCase();
+                    if (!titulo || ["contents", "navigation", "trivia", "gallery", "references", "site navigation"].includes(tituloLower)) {
+                        return;
+                    }
+
+                    // Coleta todos os elementos irmãos até o próximo H2
+                    const irmaos = [];
+                    let prox = h2.nextElementSibling;
+                    while (prox && prox.tagName !== "H2") {
+                        irmaos.push(prox);
+                        prox = prox.nextElementSibling;
+                    }
+
+                    // Caso o H2 seja apenas um ano (ex: "2026"), extrai os H3 internos como updates individuais
+                    if (/^20\d{2}$/.test(titulo)) {
+                        irmaos.forEach(el => {
+                            if (el.tagName === "H3" && encontradosNestaPagina < 6) {
+                                const subTitulo = el.innerText.replace(/\[.*?\]/g, "").trim();
+                                const subIrmaos = [];
+                                let p2 = el.nextElementSibling;
+                                while (p2 && p2.tagName !== "H2" && p2.tagName !== "H3") {
+                                    subIrmaos.push(p2);
+                                    p2 = p2.nextElementSibling;
+                                }
+                                const blocoHTML = extrairBlocoUpdateCompleto(subIrmaos);
+                                if (blocoHTML.trim()) {
+                                    updatesExtraidos.push({
+                                        id: String(Date.now() + Math.random()),
+                                        jogo: fonte.jogo,
+                                        titulo: `${subTitulo} (${titulo})`,
+                                        data: `Wiki (${nomePagina})`,
+                                        html: blocoHTML
+                                    });
+                                    encontradosNestaPagina++;
+                                }
                             }
-                            prox = prox.nextElementSibling;
-                        }
-
-                        if (desc.trim()) {
+                        });
+                    } else {
+                        const blocoHTML = extrairBlocoUpdateCompleto(irmaos);
+                        if (blocoHTML.trim()) {
                             updatesExtraidos.push({
                                 id: String(Date.now() + Math.random()),
                                 jogo: fonte.jogo,
                                 titulo,
-                                data: "Wiki",
-                                descricao: desc.trim().slice(0, 300)
+                                data: `Wiki (${nomePagina})`,
+                                html: blocoHTML
                             });
+                            encontradosNestaPagina++;
                         }
-                    });
-                }
-            }
-        } catch (e) {}
+                    }
+                });
+
+                if (encontradosNestaPagina > 0) break; // Achou a página válida de updates deste jogo
+            } catch (e) {}
+        }
     });
 
     await Promise.allSettled(promessas);
 
     if (updatesExtraidos.length > 0) {
-        const antigosManuais = updates.filter(u => u.data !== "Wiki");
+        const antigosManuais = updates.filter(u => !u.data.startsWith("Wiki"));
         updates = [...updatesExtraidos, ...antigosManuais];
     }
 
-    // Marca na memória que a leitura já foi feita e grava os dados
     const dataLeitura = new Date().toLocaleDateString("pt-BR");
     localStorage.setItem(STORAGE_JA_LEU, dataLeitura);
     salvarNaMemoria();
@@ -250,7 +389,7 @@ async function lerWikisUmaVez(forcar = false) {
     }
 
     if (forcar) {
-        mostrarToast(novosAdicionados > 0 ? `${novosAdicionados} código(s) salvo(s) na memória!` : "Memória atualizada!");
+        mostrarToast(novosAdicionados > 0 ? `${novosAdicionados} novo(s) código(s) e patch notes atualizados!` : "Patch notes e memória atualizados!");
     }
 }
 
@@ -319,6 +458,7 @@ function renderizarCodigos() {
 
 function renderizarUpdates() {
     const lista = document.getElementById('lista-updates');
+    const contador = document.getElementById('contador-updates');
     const inputBusca = document.getElementById('input-busca');
     if (!lista) return;
 
@@ -327,11 +467,14 @@ function renderizarUpdates() {
 
     const filtrados = updates.filter(u => {
         const matchJogo = jogoSelecionado === "todos" || u.jogo === jogoSelecionado;
+        const textoPlano = (u.html || u.descricao || "").replace(/<[^>]*>/g, " ").toLowerCase();
         const matchBusca = u.titulo.toLowerCase().includes(busca) ||
-                           u.descricao.toLowerCase().includes(busca) ||
+                           textoPlano.includes(busca) ||
                            u.jogo.toLowerCase().includes(busca);
         return matchJogo && matchBusca;
     });
+
+    if (contador) contador.innerText = `Notas de Atualização Completas (${filtrados.length})`;
 
     if (filtrados.length === 0) {
         lista.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem;">Nenhuma atualização encontrada.</p>`;
@@ -339,6 +482,7 @@ function renderizarUpdates() {
     }
 
     filtrados.forEach(u => {
+        const conteudoHTML = u.html || `<p>${escaparHTML(u.descricao || "")}</p>`;
         const card = document.createElement('article');
         card.className = 'update-card';
         card.innerHTML = `
@@ -349,8 +493,8 @@ function renderizarUpdates() {
                     <button type="button" class="btn-excluir" data-acao="excluir-update" data-id="${u.id}">Remover</button>
                 </div>
             </div>
-            <h3>${u.titulo}</h3>
-            <p>${u.descricao}</p>
+            <h3 class="update-titulo">${escaparHTML(u.titulo)}</h3>
+            <div class="update-corpo">${conteudoHTML}</div>
         `;
         lista.appendChild(card);
     });
@@ -507,7 +651,6 @@ function iniciar() {
                 let count = 0;
 
                 linhas.forEach(linha => {
-                    // Separa "CODIGO - Recompensa" ou "CODIGO: Recompensa"
                     const partes = linha.split(/\s*[-–:]\s*/);
                     const cod = partes[0].trim();
                     const rec = partes.slice(1).join(" - ").trim() || "Recompensa do jogo";
@@ -526,15 +669,20 @@ function iniciar() {
 
             } else if (tipoFormulario === 'update') {
                 const titulo = document.getElementById('input-titulo-update').value.trim();
-                const descricao = document.getElementById('input-desc-update').value.trim();
+                const textoBruto = document.getElementById('input-desc-update').value.trim();
                 if (!titulo) return;
+
+                const linhas = textoBruto.split('\n').map(l => l.replace(/^[-•*]\s*/, "").trim()).filter(Boolean);
+                const htmlFormatado = linhas.length > 0
+                    ? `<ul>${linhas.map(l => `<li>${escaparHTML(l)}</li>`).join("")}</ul>`
+                    : "<p>Sem detalhes adicionais.</p>";
 
                 updates.unshift({
                     id: String(Date.now()),
                     jogo,
                     titulo,
                     data: new Date().toLocaleDateString('pt-BR'),
-                    descricao: descricao || "Sem detalhes adicionais."
+                    html: htmlFormatado
                 });
                 document.getElementById('input-titulo-update').value = '';
                 document.getElementById('input-desc-update').value = '';
@@ -547,7 +695,6 @@ function iniciar() {
         });
     }
 
-    // Executa a leitura única (ou carrega direto da memória se já foi lido antes)
     lerWikisUmaVez(false);
 }
 

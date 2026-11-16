@@ -15,8 +15,8 @@
     --border-strong: #3a3a4a;
     
     --text-primary: #f4f4f6;
-    --text-secondary: #a1a1b5;
-    --text-muted: #6e6e82;
+    --text-secondary: #c4c4d4;
+    --text-muted: #7a7a90;
     
     --accent: #7c3aed;
     --accent-hover: #8b5cf6;
@@ -38,8 +38,8 @@ body.light-mode {
     --border-strong: #c2c2d1;
     
     --text-primary: #14141a;
-    --text-secondary: #4a4a5c;
-    --text-muted: #7a7a8f;
+    --text-secondary: #3b3b4d;
+    --text-muted: #6e6e85;
     
     --accent: #6d28d9;
     --accent-hover: #5b21b6;
@@ -417,25 +417,25 @@ body {
     color: #f87171;
 }
 
-/* --- LISTA DE ATUALIZAÇÕES --- */
+/* --- LISTA DE ATUALIZAÇÕES (ESTILO WIKI COMPLETO) --- */
 .lista-updates {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
 }
 
 .update-card {
     background-color: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px;
+    border-radius: 12px;
+    padding: 22px 24px;
 }
 
 .update-topo {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     gap: 10px;
     flex-wrap: wrap;
 }
@@ -443,7 +443,7 @@ body {
 .update-meta {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
 .update-data {
@@ -451,17 +451,61 @@ body {
     color: var(--text-muted);
 }
 
-.update-card h3 {
-    font-size: 1.02rem;
-    margin-bottom: 6px;
+.update-titulo {
+    font-size: 1.18rem;
+    font-weight: 700;
     color: var(--text-primary);
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
 }
 
-.update-card p {
-    font-size: 0.88rem;
+.update-corpo {
+    font-size: 0.91rem;
     color: var(--text-secondary);
-    line-height: 1.5;
-    white-space: pre-line;
+    line-height: 1.6;
+}
+
+.update-corpo p {
+    margin-bottom: 10px;
+}
+
+.update-corpo h4 {
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: var(--accent-light);
+    margin-top: 14px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.update-corpo h4:first-child {
+    margin-top: 0;
+}
+
+.update-corpo ul {
+    padding-left: 20px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.update-corpo ul ul {
+    margin-top: 5px;
+    margin-bottom: 4px;
+    padding-left: 18px;
+    color: var(--text-muted);
+}
+
+.update-corpo li {
+    line-height: 1.55;
+}
+
+.update-corpo strong {
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 /* --- FONTES --- */
@@ -534,7 +578,7 @@ body {
     border-radius: 12px;
     padding: 24px;
     width: 100%;
-    max-width: 440px;
+    max-width: 450px;
 }
 
 .modal-topo {

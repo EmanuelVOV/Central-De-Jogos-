@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central Roblox • Memória Local</title>
+    <title>Central Roblox • Wikis & Patch Notes</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -38,11 +38,11 @@
         <div class="barra-controles">
             <nav class="abas">
                 <button type="button" class="aba-btn ativa" data-aba="secao-codigos">Códigos</button>
-                <button type="button" class="aba-btn" data-aba="secao-updates">Atualizações</button>
+                <button type="button" class="aba-btn" data-aba="secao-updates">Atualizações (Patch Notes)</button>
                 <button type="button" class="aba-btn" data-aba="secao-fontes">Wikis & Links</button>
             </nav>
 
-            <input type="text" id="input-busca" placeholder="Buscar código ou novidade...">
+            <input type="text" id="input-busca" placeholder="Buscar código, fruta, stand ou update...">
         </div>
 
         <!-- ABA 1: COFRE DE CÓDIGOS -->
@@ -59,10 +59,10 @@
             <div id="grid-codigos" class="grid-cards"></div>
         </section>
 
-        <!-- ABA 2: ATUALIZAÇÕES -->
+        <!-- ABA 2: ATUALIZAÇÕES COMPLETAS -->
         <section id="secao-updates" class="aba-conteudo">
             <div class="cabecalho-secao">
-                <h2>Atualizações Salvas</h2>
+                <h2 id="contador-updates">Notas de Atualização Completas</h2>
             </div>
 
             <div id="lista-updates" class="lista-updates"></div>
@@ -119,7 +119,7 @@
                 <!-- Opção 2: Colar Lista de qualquer site -->
                 <div id="campos-lote" style="display: none;">
                     <div class="campo">
-                        <label>Cole os códigos copiados de qualquer site (um por linha)</label>
+                        <label>Cole os códigos copiados (um por linha)</label>
                         <textarea id="input-lote" rows="5" placeholder="Exemplo:&#10;KITT_RESET - Reset de Status&#10;SUB2OFFICIALNOOBIE - 20 min 2x EXP"></textarea>
                     </div>
                 </div>
@@ -127,12 +127,12 @@
                 <!-- Opção 3: Atualização -->
                 <div id="campos-update" style="display: none;">
                     <div class="campo">
-                        <label>Título da Atualização</label>
+                        <label>Título / Versão da Atualização</label>
                         <input type="text" id="input-titulo-update" placeholder="Ex: Update 24 • Novo Personagem">
                     </div>
                     <div class="campo">
-                        <label>Resumo do que mudou</label>
-                        <textarea id="input-desc-update" rows="3" placeholder="Anote os novos itens, nerfs ou eventos..."></textarea>
+                        <label>Lista de Mudanças (um tópico por linha)</label>
+                        <textarea id="input-desc-update" rows="5" placeholder="- Novo personagem adicionado&#10;- Balanceamento de dano&#10;- Correção de bugs no mapa"></textarea>
                     </div>
                 </div>
 
