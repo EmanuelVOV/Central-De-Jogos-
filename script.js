@@ -1,11 +1,10 @@
-const STORAGE_CODIGOS = "central_roblox_codigos_v2";
-const STORAGE_UPDATES = "central_roblox_updates_v2";
+const STORAGE_CODIGOS = "central_roblox_codigos_v3";
+const STORAGE_UPDATES = "central_roblox_updates_v3";
 
 let jogoSelecionado = "todos";
 let statusSelecionado = "todos";
 let tipoFormulario = "codigo";
 
-// Configuração real das Wikis (Fandom API) e páginas dedicadas de cada jogo
 const FONTES_JOGOS = [
     {
         jogo: "Blox Fruits",
@@ -51,26 +50,73 @@ const FONTES_JOGOS = [
     }
 ];
 
-let codigos = JSON.parse(localStorage.getItem(STORAGE_CODIGOS)) || [];
-let updates = JSON.parse(localStorage.getItem(STORAGE_UPDATES)) || [];
+function lerStorageSeguro(chave, padrao) {
+    try {
+        const salvo = localStorage.getItem(chave);
+        return salvo ? JSON.parse(salvo) : padrao;
+    } catch (e) {
+        return padrao;
+    }
+}
+
+let codigos = lerStorageSeguro(STORAGE_CODIGOS, []);
+let updates = lerStorageSeguro(STORAGE_UPDATES, []);
 
 function salvarDados() {
-    localStorage.setItem(STORAGE_CODIGOS, JSON.stringify(codigos));
-    localStorage.setItem(STORAGE_UPDATES, JSON.stringify(updates));
+    try {
+        localStorage.setItem(STORAGE_CODIGOS, JSON.stringify(codigos));
+        localStorage.setItem(STORAGE_UPDATES, JSON.stringify(updates));
+    } catch (e) {
+        console.warn("Erro ao salvar no navegador:", e);
+    }
 }
 
 function mostrarToast(mensagem) {
     const toast = document.getElementById('toast');
+    if (!toast) return;
     toast.innerText = mensagem;
-    toast.classList.remove('escondido');
-    setTimeout(() => toast.classList.add('escondido'), 2600);
+    toast.style.display = 'block';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+        toast.style.display = 'none';
+    }, 2600);
+}
+
+function copiarParaAreaTransferencia(texto) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).catch(() => copiarFallback(texto));
+    } else {
+        copiarFallback(texto);
+    }
+    mostrarToast(`Código "${texto}" copiado!`);
+}
+
+function copiarFallback(texto) {
+    const temp = document.createElement("textarea");
+    temp.value = texto;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+}
+
+// Fetch com limite de 5 segundos para nunca travar o botão
+async function fetchComTimeout(url, tempoMs = 5000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), tempoMs);
+    try {
+        const resposta = await fetch(url, { signal: controller.signal });
+        return resposta;
+    } finally {
+        clearTimeout(timer);
+    }
 }
 
 // --- EXTRAÇÃO DIRETA DA API DO FANDOM WIKI ---
 async function buscarCodigosWikiFandom(fonte) {
     const endpoint = `https://${fonte.wikiDominio}/api.php?action=parse&page=${encodeURIComponent(fonte.paginaCodigos)}&prop=text&format=json&origin=*`;
-    const resposta = await fetch(endpoint);
-    if (!resposta.ok) throw new Error("Wiki inacessível");
+    const resposta = await fetchComTimeout(endpoint, 5000);
+    if (!resposta.ok) return [];
 
     const json = await resposta.json();
     if (!json.parse || !json.parse.text) return [];
@@ -78,7 +124,6 @@ async function buscarCodigosWikiFandom(fonte) {
     const doc = new DOMParser().parseFromString(json.parse.text["*"], "text/html");
     const extraidos = [];
 
-    // Varre tabelas padrão das Wikis (wikitable / article-table)
     doc.querySelectorAll("table tr").forEach(tr => {
         const colunas = Array.from(tr.querySelectorAll("td"));
         if (colunas.length < 2) return;
@@ -90,7 +135,6 @@ async function buscarCodigosWikiFandom(fonte) {
         const codigoLimpo = codeEl.innerText.replace(/\[.*?\]/g, "").trim();
         const recompensaLimpa = colunas[1].innerText.replace(/\[.*?\]/g, "").trim();
 
-        // Valida formato típico de código (sem espaços longos e tamanho coerente)
         if (codigoLimpo && codigoLimpo.length >= 3 && codigoLimpo.length <= 35 && !codigoLimpo.includes(" ")) {
             extraidos.push({
                 jogo: fonte.jogo,
@@ -101,7 +145,6 @@ async function buscarCodigosWikiFandom(fonte) {
         }
     });
 
-    // Fallback: listas (<ul><li>) caso a Wiki não use tabela
     if (extraidos.length === 0) {
         doc.querySelectorAll(".mw-parser-output > ul li").forEach(li => {
             const texto = li.innerText;
@@ -129,11 +172,9 @@ async function buscarCodigosWikiFandom(fonte) {
 }
 
 async function buscarUpdatesWikiFandom(fonte) {
-    // 1. Tenta ler a página dedicada de Updates da Wiki
     const endpointParse = `https://${fonte.wikiDominio}/api.php?action=parse&page=${encodeURIComponent(fonte.paginaUpdates)}&prop=text&format=json&origin=*`;
-    const resParse = await fetch(endpointParse);
+    const resParse = await fetchComTimeout(endpointParse, 5000);
     const jsonParse = await resParse.json();
-
     const listaNovidades = [];
 
     if (jsonParse.parse && jsonParse.parse.text) {
@@ -141,7 +182,7 @@ async function buscarUpdatesWikiFandom(fonte) {
         const titulos = doc.querySelectorAll(".mw-parser-output h2, .mw-parser-output h3");
 
         titulos.forEach((h, idx) => {
-            if (idx >= 5) return; // Pega as 5 atualizações mais recentes do topo
+            if (idx >= 5) return;
             const tituloTexto = h.innerText.replace(/\[edit.*?\]|\[editar.*?\]/gi, "").trim();
             if (!tituloTexto || tituloTexto.toLowerCase().includes("contents") || tituloTexto.toLowerCase().includes("navigation")) return;
 
@@ -166,10 +207,9 @@ async function buscarUpdatesWikiFandom(fonte) {
         });
     }
 
-    // 2. Fallback: Se a Wiki não tiver página "Updates", busca as edições recentes reais da Wiki
     if (listaNovidades.length === 0) {
         const endpointRecent = `https://${fonte.wikiDominio}/api.php?action=query&list=recentchanges&rcnamespace=0&rclimit=4&format=json&origin=*`;
-        const resRecent = await fetch(endpointRecent);
+        const resRecent = await fetchComTimeout(endpointRecent, 5000);
         const jsonRecent = await resRecent.json();
 
         const mudancas = jsonRecent?.query?.recentchanges || [];
@@ -187,17 +227,16 @@ async function buscarUpdatesWikiFandom(fonte) {
     return listaNovidades;
 }
 
-// --- LEITOR DE SITES EXTERNOS DE CÓDIGOS (EX: PRO GAME GUIDES / BEEBOM) ---
+// --- LEITOR DE SITES EXTERNOS ---
 async function importarDeSiteExterno(jogo, urlPagina) {
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(urlPagina)}`;
-    const resposta = await fetch(proxyUrl);
-    if (!resposta.ok) throw new Error("Não foi possível acessar o site informado");
+    const resposta = await fetchComTimeout(proxyUrl, 8000);
+    if (!resposta.ok) throw new Error("Falha ao acessar URL");
 
     const data = await resposta.json();
     const doc = new DOMParser().parseFromString(data.contents, "text/html");
     const encontrados = [];
 
-    // Padrão comum em sites de códigos Roblox: <ul><li><strong>CODIGO</strong> – Recompensa</li></ul>
     doc.querySelectorAll("article li, .entry-content li, main li, table tr").forEach(el => {
         const texto = el.innerText.trim();
         if (!texto || texto.toLowerCase().includes("expired") || texto.toLowerCase().includes("working")) return;
@@ -222,32 +261,34 @@ async function importarDeSiteExterno(jogo, urlPagina) {
     return encontrados;
 }
 
-// --- SINCRONIZAÇÃO GERAL ---
+// --- SINCRONIZAÇÃO PARALELA ---
 async function sincronizarTodasWikis() {
     const btnSync = document.getElementById('btn-sincronizar');
     const statusEl = document.getElementById('status-sync');
 
-    btnSync.disabled = true;
-    btnSync.innerText = "Sincronizando...";
-    statusEl.innerText = "Consultando Wikis oficiais...";
+    if (btnSync) {
+        btnSync.disabled = true;
+        btnSync.innerText = "Sincronizando...";
+    }
+    if (statusEl) statusEl.innerText = "Consultando Wikis...";
 
     let novosCodigosCount = 0;
     const novosUpdatesGerais = [];
 
-    for (const fonte of FONTES_JOGOS) {
-        try {
-            const [listaCod, listaUpd] = await Promise.all([
-                buscarCodigosWikiFandom(fonte),
-                buscarUpdatesWikiFandom(fonte)
-            ]);
+    const tarefas = FONTES_JOGOS.map(async (fonte) => {
+        const [resCod, resUpd] = await Promise.allSettled([
+            buscarCodigosWikiFandom(fonte),
+            buscarUpdatesWikiFandom(fonte)
+        ]);
 
-            listaCod.forEach(novo => {
+        if (resCod.status === "fulfilled") {
+            resCod.value.forEach(novo => {
                 const jaExiste = codigos.some(
                     c => c.jogo === novo.jogo && c.codigo.toLowerCase() === novo.codigo.toLowerCase()
                 );
                 if (!jaExiste) {
                     codigos.unshift({
-                        id: Date.now() + Math.random(),
+                        id: String(Date.now() + Math.random()),
                         jogo: novo.jogo,
                         codigo: novo.codigo,
                         recompensa: novo.recompensa,
@@ -257,46 +298,56 @@ async function sincronizarTodasWikis() {
                     novosCodigosCount++;
                 }
             });
+        }
 
-            listaUpd.forEach(u => {
+        if (resUpd.status === "fulfilled") {
+            resUpd.value.forEach(u => {
                 novosUpdatesGerais.push({
-                    id: Date.now() + Math.random(),
+                    id: String(Date.now() + Math.random()),
                     ...u
                 });
             });
-        } catch (err) {
-            console.warn(`Aviso ao ler Wiki de ${fonte.jogo}:`, err);
         }
-    }
+    });
+
+    await Promise.allSettled(tarefas);
 
     if (novosUpdatesGerais.length > 0) {
-        // Mantém updates manuais do usuário e substitui os automáticos da Wiki pelos mais recentes
         const manuais = updates.filter(u => u.data !== "Wiki Oficial");
         updates = [...novosUpdatesGerais, ...manuais];
     }
 
     salvarDados();
-    renderizarCodigos();
-    renderizarUpdates();
-    renderizarFontes();
+    renderizarTudo();
 
     const agora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-    statusEl.innerText = `Sincronizado às ${agora}`;
-    btnSync.disabled = false;
-    btnSync.innerText = "↻ Sincronizar Wikis";
+    if (statusEl) statusEl.innerText = `Atualizado às ${agora}`;
+    if (btnSync) {
+        btnSync.disabled = false;
+        btnSync.innerText = "↻ Sincronizar Wikis";
+    }
 
     mostrarToast(
         novosCodigosCount > 0
-            ? `${novosCodigosCount} novo(s) código(s) importado(s) das Wikis!`
-            : "Wikis verificadas! Tudo atualizado."
+            ? `${novosCodigosCount} novo(s) código(s) importado(s)!`
+            : "Wikis verificadas!"
     );
 }
 
-// --- RENDERIZAÇÃO DA INTERFACE ---
+// --- RENDERIZAÇÃO ---
+function renderizarTudo() {
+    renderizarCodigos();
+    renderizarUpdates();
+    renderizarFontes();
+}
+
 function renderizarCodigos() {
     const grid = document.getElementById('grid-codigos');
     const contador = document.getElementById('contador-codigos');
-    const busca = document.getElementById('input-busca').value.toLowerCase().trim();
+    const inputBusca = document.getElementById('input-busca');
+    if (!grid) return;
+
+    const busca = inputBusca ? inputBusca.value.toLowerCase().trim() : "";
     grid.innerHTML = '';
 
     const filtrados = codigos.filter(item => {
@@ -308,10 +359,10 @@ function renderizarCodigos() {
         return matchJogo && matchStatus && matchBusca;
     });
 
-    contador.innerText = `Códigos (${filtrados.length})`;
+    if (contador) contador.innerText = `Códigos (${filtrados.length})`;
 
     if (filtrados.length === 0) {
-        grid.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem;">Nenhum código salvo ainda. Clique em <strong>↻ Sincronizar Wikis</strong> no topo para puxar das Wikis.</p>`;
+        grid.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem;">Nenhum código encontrado. Clique em <strong>↻ Sincronizar Wikis</strong> ou em <strong>+ Adicionar</strong>.</p>`;
         return;
     }
 
@@ -329,45 +380,29 @@ function renderizarCodigos() {
 
             <div class="codigo-box">
                 <span class="codigo-texto">${item.codigo}</span>
-                <button class="btn-copiar" data-codigo="${item.codigo}">Copiar</button>
+                <button type="button" class="btn-copiar" data-acao="copiar" data-codigo="${item.codigo}">Copiar</button>
             </div>
 
             <p class="recompensa-texto">${item.recompensa}</p>
 
             <div class="card-rodape">
-                <button class="btn-check">
+                <button type="button" class="btn-check" data-acao="toggle-status" data-id="${item.id}">
                     ${isResgatado ? '↺ Desmarcar' : '✓ Marcar resgatado'}
                 </button>
                 <span class="tag-fonte">${item.fonte || 'Manual'}</span>
-                <button class="btn-excluir" title="Remover">Remover</button>
+                <button type="button" class="btn-excluir" data-acao="excluir-codigo" data-id="${item.id}">Remover</button>
             </div>
         `;
-
-        card.querySelector('.btn-copiar').addEventListener('click', (e) => {
-            const texto = e.target.dataset.codigo;
-            navigator.clipboard.writeText(texto);
-            mostrarToast(`Código "${texto}" copiado!`);
-        });
-
-        card.querySelector('.btn-check').addEventListener('click', () => {
-            item.status = item.status === "ativo" ? "resgatado" : "ativo";
-            salvarDados();
-            renderizarCodigos();
-        });
-
-        card.querySelector('.btn-excluir').addEventListener('click', () => {
-            codigos = codigos.filter(c => c.id !== item.id);
-            salvarDados();
-            renderizarCodigos();
-        });
-
         grid.appendChild(card);
     });
 }
 
 function renderizarUpdates() {
     const lista = document.getElementById('lista-updates');
-    const busca = document.getElementById('input-busca').value.toLowerCase().trim();
+    const inputBusca = document.getElementById('input-busca');
+    if (!lista) return;
+
+    const busca = inputBusca ? inputBusca.value.toLowerCase().trim() : "";
     lista.innerHTML = '';
 
     const filtrados = updates.filter(u => {
@@ -379,7 +414,7 @@ function renderizarUpdates() {
     });
 
     if (filtrados.length === 0) {
-        lista.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem;">Nenhuma atualização carregada. Clique em <strong>↻ Sincronizar Wikis</strong> para buscar.</p>`;
+        lista.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem;">Nenhuma atualização encontrada. Clique em <strong>↻ Sincronizar Wikis</strong> para buscar.</p>`;
         return;
     }
 
@@ -391,25 +426,19 @@ function renderizarUpdates() {
                 <span class="tag-jogo">${u.jogo}</span>
                 <div class="update-meta">
                     <span class="update-data">${u.data}</span>
-                    <button class="btn-excluir">Remover</button>
+                    <button type="button" class="btn-excluir" data-acao="excluir-update" data-id="${u.id}">Remover</button>
                 </div>
             </div>
             <h3>${u.titulo}</h3>
             <p>${u.descricao}</p>
         `;
-
-        card.querySelector('.btn-excluir').addEventListener('click', () => {
-            updates = updates.filter(item => item.id !== u.id);
-            salvarDados();
-            renderizarUpdates();
-        });
-
         lista.appendChild(card);
     });
 }
 
 function renderizarFontes() {
     const grid = document.getElementById('grid-fontes');
+    if (!grid) return;
     grid.innerHTML = '';
 
     FONTES_JOGOS.forEach(f => {
@@ -420,124 +449,225 @@ function renderizarFontes() {
             <div>
                 <span class="tag-jogo">${f.wikiDominio}</span>
                 <h3 style="margin-top: 8px;">${f.jogo}</h3>
-                <p class="fonte-status">${qtdCodigos} código(s) salvo(s) no painel</p>
+                <p class="fonte-status">${qtdCodigos} código(s) salvo(s)</p>
             </div>
             <div class="lista-links-diretos">
-                ${f.links.map(l => `<a href="${l.url}" target="_blank" class="btn-link"><span>${l.nome}</span><span>↗</span></a>`).join('')}
+                ${f.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer" class="btn-link"><span>${l.nome}</span><span>↗</span></a>`).join('')}
             </div>
         `;
         grid.appendChild(card);
     });
 }
 
-// --- EVENTOS ---
-function configurarEventos() {
-    document.getElementById('btn-sincronizar').addEventListener('click', sincronizarTodasWikis);
+function abrirModal() {
+    const modal = document.getElementById('modal-novo');
+    if (modal) modal.style.display = 'flex';
+}
 
-    document.querySelectorAll('.jogo-pill').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.jogo-pill').forEach(b => b.classList.remove('ativo'));
-            btn.classList.add('ativo');
-            jogoSelecionado = btn.dataset.jogo;
-            renderizarCodigos();
-            renderizarUpdates();
-        });
-    });
+function fecharModal() {
+    const modal = document.getElementById('modal-novo');
+    if (modal) modal.style.display = 'none';
+}
 
-    document.querySelectorAll('.status-pill').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.status-pill').forEach(b => b.classList.remove('ativo'));
-            btn.classList.add('ativo');
-            statusSelecionado = btn.dataset.status;
-            renderizarCodigos();
-        });
-    });
+// --- DELEGAÇÃO GLOBAL DE CLIQUES (GARANTE QUE TODOS OS BOTÕES FUNCIONEM) ---
+document.addEventListener('click', (e) => {
+    const alvo = e.target;
 
-    document.querySelectorAll('.aba-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativa'));
-            document.querySelectorAll('.aba-conteudo').forEach(c => c.classList.remove('ativa'));
-            btn.classList.add('ativa');
-            document.getElementById(btn.dataset.aba).classList.add('ativa');
-        });
-    });
-
-    document.getElementById('input-busca').addEventListener('input', () => {
-        renderizarCodigos();
-        renderizarUpdates();
-    });
-
-    const btnTema = document.getElementById('btn-tema');
-    if (localStorage.getItem('roblox_tema_light') === 'true') {
-        document.body.classList.add('light-mode');
+    // 1. Botão Sincronizar
+    if (alvo.closest('#btn-sincronizar')) {
+        sincronizarTodasWikis();
+        return;
     }
-    btnTema.addEventListener('click', () => {
+
+    // 2. Botão Abrir Modal
+    if (alvo.closest('#btn-abrir-modal')) {
+        abrirModal();
+        return;
+    }
+
+    // 3. Fechar Modal (botão X ou clique fora da caixa)
+    if (alvo.closest('#btn-fechar-modal') || alvo.id === 'modal-novo') {
+        fecharModal();
+        return;
+    }
+
+    // 4. Alternar Tema
+    if (alvo.closest('#btn-tema')) {
         document.body.classList.toggle('light-mode');
         localStorage.setItem('roblox_tema_light', document.body.classList.contains('light-mode'));
-    });
+        return;
+    }
 
-    // Modal
-    const modal = document.getElementById('modal-novo');
-    document.getElementById('btn-abrir-modal').addEventListener('click', () => modal.classList.remove('escondido'));
-    document.getElementById('btn-fechar-modal').addEventListener('click', () => modal.classList.add('escondido'));
+    // 5. Filtro por Jogo
+    const btnJogo = alvo.closest('.jogo-pill');
+    if (btnJogo) {
+        document.querySelectorAll('.jogo-pill').forEach(b => b.classList.remove('ativo'));
+        btnJogo.classList.add('ativo');
+        jogoSelecionado = btnJogo.dataset.jogo;
+        renderizarCodigos();
+        renderizarUpdates();
+        return;
+    }
 
-    document.querySelectorAll('.tipo-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('ativo'));
-            btn.classList.add('ativo');
-            tipoFormulario = btn.dataset.tipo;
+    // 6. Filtro por Status
+    const btnStatus = alvo.closest('.status-pill');
+    if (btnStatus) {
+        document.querySelectorAll('.status-pill').forEach(b => b.classList.remove('ativo'));
+        btnStatus.classList.add('ativo');
+        statusSelecionado = btnStatus.dataset.status;
+        renderizarCodigos();
+        return;
+    }
 
-            document.getElementById('campos-codigo').classList.toggle('escondido', tipoFormulario !== 'codigo');
-            document.getElementById('campos-update').classList.toggle('escondido', tipoFormulario !== 'update');
-            document.getElementById('campos-url').classList.toggle('escondido', tipoFormulario !== 'url');
-            document.getElementById('btn-salvar-modal').innerText = tipoFormulario === 'url' ? 'Importar da Página' : 'Salvar';
-        });
-    });
+    // 7. Abas Principais
+    const btnAba = alvo.closest('.aba-btn');
+    if (btnAba) {
+        document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativa'));
+        document.querySelectorAll('.aba-conteudo').forEach(c => c.classList.remove('ativa'));
+        btnAba.classList.add('ativa');
+        const secao = document.getElementById(btnAba.dataset.aba);
+        if (secao) secao.classList.add('ativa');
+        return;
+    }
 
-    document.getElementById('form-adicionar').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const jogo = document.getElementById('select-jogo').value;
-        const btnSalvar = document.getElementById('btn-salvar-modal');
+    // 8. Tipo de Registro no Modal
+    const btnTipo = alvo.closest('.tipo-btn');
+    if (btnTipo) {
+        document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('ativo'));
+        btnTipo.classList.add('ativo');
+        tipoFormulario = btnTipo.dataset.tipo;
 
-        if (tipoFormulario === 'codigo') {
-            const codigo = document.getElementById('input-codigo').value.trim();
-            const recompensa = document.getElementById('input-recompensa').value.trim() || "Recompensa do jogo";
-            if (!codigo) return;
+        document.getElementById('campos-codigo').style.display = tipoFormulario === 'codigo' ? 'block' : 'none';
+        document.getElementById('campos-update').style.display = tipoFormulario === 'update' ? 'block' : 'none';
+        document.getElementById('campos-url').style.display = tipoFormulario === 'url' ? 'block' : 'none';
+        document.getElementById('btn-salvar-modal').innerText = tipoFormulario === 'url' ? 'Importar da Página' : 'Salvar';
+        return;
+    }
 
-            codigos.unshift({ id: Date.now(), jogo, codigo, recompensa, status: "ativo", fonte: "Manual" });
-            document.getElementById('input-codigo').value = '';
-            document.getElementById('input-recompensa').value = '';
+    // 9. Ações nos Cards (Copiar, Marcar Resgatado, Excluir)
+    const btnAcao = alvo.closest('[data-acao]');
+    if (btnAcao) {
+        const acao = btnAcao.dataset.acao;
+        const id = btnAcao.dataset.id;
+
+        if (acao === 'copiar') {
+            copiarParaAreaTransferencia(btnAcao.dataset.codigo);
+        } else if (acao === 'toggle-status') {
+            const item = codigos.find(c => String(c.id) === String(id));
+            if (item) {
+                item.status = item.status === 'ativo' ? 'resgatado' : 'ativo';
+                salvarDados();
+                renderizarCodigos();
+            }
+        } else if (acao === 'excluir-codigo') {
+            codigos = codigos.filter(c => String(c.id) !== String(id));
             salvarDados();
             renderizarCodigos();
             renderizarFontes();
-            modal.classList.add('escondido');
-            mostrarToast("Código adicionado!");
-
-        } else if (tipoFormulario === 'update') {
-            const titulo = document.getElementById('input-titulo-update').value.trim();
-            const descricao = document.getElementById('input-desc-update').value.trim();
-            if (!titulo) return;
-
-            updates.unshift({
-                id: Date.now(),
-                jogo,
-                titulo,
-                data: new Date().toLocaleDateString('pt-BR'),
-                descricao: descricao || "Sem detalhes adicionais."
-            });
-            document.getElementById('input-titulo-update').value = '';
-            document.getElementById('input-desc-update').value = '';
+        } else if (acao === 'excluir-update') {
+            updates = updates.filter(u => String(u.id) !== String(id));
             salvarDados();
             renderizarUpdates();
-            modal.classList.add('escondido');
-            mostrarToast("Atualização registrada!");
+        }
+    }
+});
 
-        } else if (tipoFormulario === 'url') {
-            const urlExterna = document.getElementById('input-url-externa').value.trim();
-            if (!urlExterna) return;
+// --- INICIALIZAÇÃO ---
+function iniciarCentral() {
+    if (localStorage.getItem('roblox_tema_light') === 'true') {
+        document.body.classList.add('light-mode');
+    }
 
-            btnSalvar.disabled = true;
-            btnSalvar.innerText = "Lendo página...";
+    const inputBusca = document.getElementById('input-busca');
+    if (inputBusca) {
+        inputBusca.addEventListener('input', () => {
+            renderizarCodigos();
+            renderizarUpdates();
+        });
+    }
 
-            try {
-                const importados = await importarDeSiteExterno(jogo, url
+    const formAdicionar = document.getElementById('form-adicionar');
+    if (formAdicionar) {
+        formAdicionar.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const jogo = document.getElementById('select-jogo').value;
+            const btnSalvar = document.getElementById('btn-salvar-modal');
+
+            if (tipoFormulario === 'codigo') {
+                const codigo = document.getElementById('input-codigo').value.trim();
+                const recompensa = document.getElementById('input-recompensa').value.trim() || "Recompensa do jogo";
+                if (!codigo) return;
+
+                codigos.unshift({ id: String(Date.now()), jogo, codigo, recompensa, status: "ativo", fonte: "Manual" });
+                document.getElementById('input-codigo').value = '';
+                document.getElementById('input-recompensa').value = '';
+                salvarDados();
+                renderizarTudo();
+                fecharModal();
+                mostrarToast("Código adicionado!");
+
+            } else if (tipoFormulario === 'update') {
+                const titulo = document.getElementById('input-titulo-update').value.trim();
+                const descricao = document.getElementById('input-desc-update').value.trim();
+                if (!titulo) return;
+
+                updates.unshift({
+                    id: String(Date.now()),
+                    jogo,
+                    titulo,
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    descricao: descricao || "Sem detalhes adicionais."
+                });
+                document.getElementById('input-titulo-update').value = '';
+                document.getElementById('input-desc-update').value = '';
+                salvarDados();
+                renderizarUpdates();
+                fecharModal();
+                mostrarToast("Atualização registrada!");
+
+            } else if (tipoFormulario === 'url') {
+                const urlExterna = document.getElementById('input-url-externa').value.trim();
+                if (!urlExterna) return;
+
+                btnSalvar.disabled = true;
+                btnSalvar.innerText = "Lendo página...";
+
+                try {
+                    const importados = await importarDeSiteExterno(jogo, urlExterna);
+                    let adicionados = 0;
+
+                    importados.forEach(novo => {
+                        const existe = codigos.some(c => c.jogo === jogo && c.codigo.toLowerCase() === novo.codigo.toLowerCase());
+                        if (!existe) {
+                            codigos.unshift({ id: String(Date.now() + Math.random()), ...novo, status: "ativo" });
+                            adicionados++;
+                        }
+                    });
+
+                    salvarDados();
+                    renderizarTudo();
+                    document.getElementById('input-url-externa').value = '';
+                    fecharModal();
+                    mostrarToast(`${adicionados} código(s) extraído(s)!`);
+                } catch (erro) {
+                    mostrarToast("Não foi possível ler esse link.");
+                } finally {
+                    btnSalvar.disabled = false;
+                    btnSalvar.innerText = "Importar da Página";
+                }
+            }
+        });
+    }
+
+    renderizarTudo();
+
+    if (codigos.length === 0) {
+        sincronizarTodasWikis();
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciarCentral);
+} else {
+    iniciarCentral();
+}

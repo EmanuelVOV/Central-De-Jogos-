@@ -13,13 +13,13 @@
         <div class="topbar-container">
             <div class="titulo-area">
                 <h1>Central Roblox</h1>
-                <span id="status-sync" class="subtitulo">Pronto para sincronizar</span>
+                <span id="status-sync" class="subtitulo">Pronto</span>
             </div>
 
             <div class="acoes-topo">
-                <button id="btn-sincronizar" class="btn-primario">↻ Sincronizar Wikis</button>
-                <button id="btn-abrir-modal" class="btn-secundario">+ Manual</button>
-                <button id="btn-tema" class="btn-secundario" title="Alternar tema">Tema</button>
+                <button type="button" id="btn-sincronizar" class="btn-primario">↻ Sincronizar Wikis</button>
+                <button type="button" id="btn-abrir-modal" class="btn-secundario">+ Adicionar</button>
+                <button type="button" id="btn-tema" class="btn-secundario" title="Alternar tema">Tema</button>
             </div>
         </div>
     </header>
@@ -28,19 +28,19 @@
         
         <!-- Filtro por Jogo -->
         <section class="filtros-jogos" id="filtros-jogos">
-            <button class="jogo-pill ativo" data-jogo="todos">Todos os Jogos</button>
-            <button class="jogo-pill" data-jogo="Jujutsu Shenanigans">Jujutsu Shenanigans</button>
-            <button class="jogo-pill" data-jogo="Stand Out">Stand Out</button>
-            <button class="jogo-pill" data-jogo="A Bizarre Run">A Bizarre Run</button>
-            <button class="jogo-pill" data-jogo="Blox Fruits">Blox Fruits</button>
+            <button type="button" class="jogo-pill ativo" data-jogo="todos">Todos os Jogos</button>
+            <button type="button" class="jogo-pill" data-jogo="Jujutsu Shenanigans">Jujutsu Shenanigans</button>
+            <button type="button" class="jogo-pill" data-jogo="Stand Out">Stand Out</button>
+            <button type="button" class="jogo-pill" data-jogo="A Bizarre Run">A Bizarre Run</button>
+            <button type="button" class="jogo-pill" data-jogo="Blox Fruits">Blox Fruits</button>
         </section>
 
         <!-- Barra de Controles e Abas -->
         <div class="barra-controles">
             <nav class="abas">
-                <button class="aba-btn ativa" data-aba="secao-codigos">Códigos das Wikis</button>
-                <button class="aba-btn" data-aba="secao-updates">Atualizações (Wiki)</button>
-                <button class="aba-btn" data-aba="secao-fontes">Wikis & Fontes</button>
+                <button type="button" class="aba-btn ativa" data-aba="secao-codigos">Códigos</button>
+                <button type="button" class="aba-btn" data-aba="secao-updates">Atualizações</button>
+                <button type="button" class="aba-btn" data-aba="secao-fontes">Wikis & Fontes</button>
             </nav>
 
             <input type="text" id="input-busca" placeholder="Filtrar código, item ou update...">
@@ -49,27 +49,27 @@
         <!-- ABA 1: COFRE DE CÓDIGOS -->
         <section id="secao-codigos" class="aba-conteudo ativa">
             <div class="cabecalho-secao">
-                <h2 id="contador-codigos">Códigos Ativos</h2>
+                <h2 id="contador-codigos">Códigos Disponíveis</h2>
                 <div class="filtro-status">
-                    <button class="status-pill ativo" data-status="todos">Todos</button>
-                    <button class="status-pill" data-status="ativo">Não Resgatados</button>
-                    <button class="status-pill" data-status="resgatado">Resgatados</button>
+                    <button type="button" class="status-pill ativo" data-status="todos">Todos</button>
+                    <button type="button" class="status-pill" data-status="ativo">Não Resgatados</button>
+                    <button type="button" class="status-pill" data-status="resgatado">Resgatados</button>
                 </div>
             </div>
 
             <div id="grid-codigos" class="grid-cards"></div>
         </section>
 
-        <!-- ABA 2: ATUALIZAÇÕES (PATCH NOTES DAS WIKIS) -->
+        <!-- ABA 2: ATUALIZAÇÕES -->
         <section id="secao-updates" class="aba-conteudo">
             <div class="cabecalho-secao">
-                <h2>Notas de Atualização e Mudanças</h2>
+                <h2>Notas de Atualização (Wikis)</h2>
             </div>
 
             <div id="lista-updates" class="lista-updates"></div>
         </section>
 
-        <!-- ABA 3: WIKIS E SITES DE CÓDIGOS CONFIGURADOS -->
+        <!-- ABA 3: WIKIS E SITES DE CÓDIGOS -->
         <section id="secao-fontes" class="aba-conteudo">
             <div class="cabecalho-secao">
                 <h2>Fontes Conectadas (Wikis & Sites de Códigos)</h2>
@@ -80,12 +80,12 @@
 
     </main>
 
-    <!-- Modal para Adicionar Manualmente ou Importar URL de Site de Códigos -->
-    <div id="modal-novo" class="modal-fundo escondido">
+    <!-- Modal (inicia oculto via inline style para nunca bloquear cliques) -->
+    <div id="modal-novo" class="modal-fundo" style="display: none;">
         <div class="modal-box">
             <div class="modal-topo">
                 <h3>Adicionar ou Importar</h3>
-                <button id="btn-fechar-modal" class="btn-fechar">✕</button>
+                <button type="button" id="btn-fechar-modal" class="btn-fechar">✕</button>
             </div>
 
             <div class="tipo-registro">
@@ -118,7 +118,7 @@
                 </div>
 
                 <!-- Campos de Atualização Manual -->
-                <div id="campos-update" class="escondido">
+                <div id="campos-update" style="display: none;">
                     <div class="campo">
                         <label>Título / Versão</label>
                         <input type="text" id="input-titulo-update" placeholder="Ex: Update 24 • Novo Mapa">
@@ -130,7 +130,7 @@
                 </div>
 
                 <!-- Campos para Puxar de Site de Códigos / Wiki Externa -->
-                <div id="campos-url" class="escondido">
+                <div id="campos-url" style="display: none;">
                     <div class="campo">
                         <label>Link da Página de Códigos (Pro Game Guides, Wiki, etc.)</label>
                         <input type="url" id="input-url-externa" placeholder="https://progameguides.com/roblox/...">
@@ -144,7 +144,7 @@
     </div>
 
     <!-- Notificação Flutuante -->
-    <div id="toast" class="toast escondido"></div>
+    <div id="toast" class="toast" style="display: none;"></div>
 
     <script src="script.js"></script>
 </body>
