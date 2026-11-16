@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Roblox • Códigos & Updates</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Cabeçalho -->
+    <header class="topbar">
+        <div class="topbar-container">
+            <div class="titulo-area">
+                <h1>Central Roblox</h1>
+                <span class="subtitulo">Códigos, atualizações e notas pessoais</span>
+            </div>
+
+            <div class="acoes-topo">
+                <button id="btn-abrir-modal" class="btn-primario">+ Adicionar</button>
+                <button id="btn-tema" class="btn-secundario" title="Alternar tema">Tema</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <!-- Filtro por Jogo -->
+        <section class="filtros-jogos" id="filtros-jogos">
+            <button class="jogo-pill ativo" data-jogo="todos">Todos os Jogos</button>
+            <button class="jogo-pill" data-jogo="Jujutsu Shenanigans">Jujutsu Shenanigans</button>
+            <button class="jogo-pill" data-jogo="Stand Out">Stand Out</button>
+            <button class="jogo-pill" data-jogo="A Bizarre Run">A Bizarre Run</button>
+            <button class="jogo-pill" data-jogo="Blox Fruits">Blox Fruits</button>
+        </section>
+
+        <!-- Barra de Busca e Abas -->
+        <div class="barra-controles">
+            <nav class="abas">
+                <button class="aba-btn ativa" data-aba="secao-codigos">Cofre de Códigos</button>
+                <button class="aba-btn" data-aba="secao-updates">Atualizações</button>
+                <button class="aba-btn" data-aba="secao-links">Atalhos dos Jogos</button>
+            </nav>
+
+            <input type="text" id="input-busca" placeholder="Buscar código ou novidade...">
+        </div>
+
+        <!-- ABA 1: COFRE DE CÓDIGOS -->
+        <section id="secao-codigos" class="aba-conteudo ativa">
+            <div class="cabecalho-secao">
+                <h2>Códigos Disponíveis</h2>
+                <div class="filtro-status">
+                    <button class="status-pill ativo" data-status="todos">Todos</button>
+                    <button class="status-pill" data-status="ativo">Ativos</button>
+                    <button class="status-pill" data-status="resgatado">Resgatados</button>
+                </div>
+            </div>
+
+            <div id="grid-codigos" class="grid-cards"></div>
+        </section>
+
+        <!-- ABA 2: ATUALIZAÇÕES (PATCH NOTES) -->
+        <section id="secao-updates" class="aba-conteudo">
+            <div class="cabecalho-secao">
+                <h2>Histórico de Atualizações</h2>
+            </div>
+
+            <div id="lista-updates" class="lista-updates"></div>
+        </section>
+
+        <!-- ABA 3: ATALHOS RÁPIDOS -->
+        <section id="secao-links" class="aba-conteudo">
+            <div class="grid-links">
+                <div class="link-card">
+                    <span class="tag-jogo">Jujutsu Shenanigans</span>
+                    <h3>Página Oficial no Roblox</h3>
+                    <p>Acesse o jogo, grupo oficial da comunidade e changelogs de personagens.</p>
+                    <a href="https://www.roblox.com/discover/?Keyword=Jujutsu%20Shenanigans" target="_blank" class="btn-link">Abrir no Roblox ↗</a>
+                </div>
+
+                <div class="link-card">
+                    <span class="tag-jogo">Stand Out</span>
+                    <h3>Página Oficial no Roblox</h3>
+                    <p>Confira servidores, atualizações de Stands e eventos ativos.</p>
+                    <a href="https://www.roblox.com/discover/?Keyword=Stand%20Out" target="_blank" class="btn-link">Abrir no Roblox ↗</a>
+                </div>
+
+                <div class="link-card">
+                    <span class="tag-jogo">A Bizarre Run</span>
+                    <h3>Página Oficial no Roblox</h3>
+                    <p>Entre direto no jogo ou pesquise códigos recentes da comunidade.</p>
+                    <a href="https://www.roblox.com/discover/?Keyword=A%20Bizarre%20Run" target="_blank" class="btn-link">Abrir no Roblox ↗</a>
+                </div>
+
+                <div class="link-card">
+                    <span class="tag-jogo">Blox Fruits</span>
+                    <h3>Página Oficial & Wiki</h3>
+                    <p>Acompanhe frutas na loja, updates de ilhas e códigos de 2x EXP.</p>
+                    <a href="https://www.roblox.com/games/2753915549/Blox-Fruits" target="_blank" class="btn-link">Abrir no Roblox ↗</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal para Adicionar Código ou Atualização -->
+    <div id="modal-novo" class="modal-fundo escondido">
+        <div class="modal-box">
+            <div class="modal-topo">
+                <h3>Adicionar ao Painel</h3>
+                <button id="btn-fechar-modal" class="btn-fechar">✕</button>
+            </div>
+
+            <div class="tipo-registro">
+                <button type="button" class="tipo-btn ativo" data-tipo="codigo">Novo Código</button>
+                <button type="button" class="tipo-btn" data-tipo="update">Nova Atualização</button>
+            </div>
+
+            <form id="form-adicionar">
+                <div class="campo">
+                    <label>Jogo</label>
+                    <select id="select-jogo" required>
+                        <option value="Jujutsu Shenanigans">Jujutsu Shenanigans</option>
+                        <option value="Stand Out">Stand Out</option>
+                        <option value="A Bizarre Run">A Bizarre Run</option>
+                        <option value="Blox Fruits">Blox Fruits</option>
+                    </select>
+                </div>
+
+                <!-- Campos de Código -->
+                <div id="campos-codigo">
+                    <div class="campo">
+                        <label>Código</label>
+                        <input type="text" id="input-codigo" placeholder="Ex: SUB2GAMERROBOT_EXP1">
+                    </div>
+                    <div class="campo">
+                        <label>Recompensa</label>
+                        <input type="text" id="input-recompensa" placeholder="Ex: 20 min de 2x EXP ou 500 Cash">
+                    </div>
+                </div>
+
+                <!-- Campos de Atualização -->
+                <div id="campos-update" class="escondido">
+                    <div class="campo">
+                        <label>Título / Versão do Update</label>
+                        <input type="text" id="input-titulo-update" placeholder="Ex: Update 24 • Novo Personagem">
+                    </div>
+                    <div class="campo">
+                        <label>O que mudou?</label>
+                        <textarea id="input-desc-update" rows="3" placeholder="Anote os novos itens, nerfs, buffs ou eventos..."></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primario btn-full">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notificação Flutuante (Toast) -->
+    <div id="toast" class="toast escondido">Código copiado!</div>
+
+    <script src="script.js"></script>
+</body>
+</html>
